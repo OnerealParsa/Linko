@@ -24,3 +24,19 @@ void printMenu() {
     cout << "  help" << endl;
     cout << "==================================================\n" << endl;
 }
+string readQuotedString(stringstream& ss) {
+    string result;
+    char c;
+    ss >> ws >> c;
+    
+    if (c == '"') {
+        while (ss.get(c) && c != '"') {
+            result += c;
+        }
+    } else {
+        ss.putback(c);
+        ss >> result;
+    }
+    
+    return result;
+}
