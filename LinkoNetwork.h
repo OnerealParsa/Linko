@@ -146,3 +146,116 @@ public:
             cout << "You cannot unfollow yourself." << endl;
             return false;
         }
+ 
+        User* targetUser = findUser(target);
+        if (targetUser == NULL) {
+            cout << "User '" << target << "' not found." << endl;
+            return false;
+        }
+        
+        User* current = findUser(currentUser);
+        
+        if (!current->isFollowing(target)) {
+            cout << "You are not following '" << target << "'." << endl;
+            return false;
+        }
+        
+        current->removeFollowing(target);
+        targetUser->removeFollower(currentUser);
+        
+        cout << "You have unfollowed '" << target << "'." << endl;
+        saveData();
+        return true;
+    }
+
+    void showFeed(int sortMode = 0) {
+        if (!isLoggedIn()) {
+            cout << "Please login first." << endl;
+            return;
+        }
+        
+        User* current = findUser(currentUser);
+        vector<Post> feedPosts;
+        
+        for (int i = 0; i < (int)posts.size(); i++) {
+            string author = posts[i].getAuthor();
+            
+            if (author == currentUser || (current && current->isFollowing(author))) {
+                feedPosts.push_back(posts[i]);
+            }
+        }
+        
+        if (sortMode == 1) {
+            for (int i = 0; i < (int)feedPosts.size() - 1; i++) {
+                for (int j = 0; j < (int)feedPosts.size() - i - 1; j++) {
+                    if (feedPosts[j].getDate() < feedPosts[j + 1].getDate()) {
+                        swap(feedPosts[j], feedPosts[j + 1]);
+                    }
+                }
+            }
+        }
+        else if (sortMode == 2) {
+            for (int i = 0; i < (int)feedPosts.size() - 1; i++) {
+                for (int j = 0; j < (int)feedPosts.size() - i - 1; j++) {
+                    if (feedPosts[j].getLikes() < feedPosts[j + 1].getLikes()) {
+                        swap(feedPosts[j], feedPosts[j + 1]);
+                    }
+                }
+            }
+        }
+        
+        if (feedPosts.empty()) {
+            cout << "No posts to show. Follow some users!" << endl;
+            return;
+        }
+        
+        cout << "\n=============== YOUR FEED ===============" << endl;
+        
+        for (int i = 0; i < (int)feedPosts.size(); i++) {
+            const Post& post = feedPosts[i];
+            const User* author = findUser(post.getAuthor());
+            
+            cout << "[" << post.getId() << "] ";
+            cout << post.getAuthor();
+            if (author != NULL) {
+                cout << " (" << author->getDisplayName() << ")";
+            }
+            cout << ":" << endl;
+            cout << "\"" << post.getContent() << "\"" << endl;
+            cout << "Date: " << post.getDate().toString() << endl;
+            cout << "Likes: " << post.getLikes();
+            if (post.hasLiked(currentUser)) {
+                cout << " (you liked this)";
+            }
+            cout << " | Comments: " << post.getCommentsCount() << endl;
+            
+            if (post.getCommentsCount() > 0) {
+                cout << "Comments:" << endl;
+                vector<Comment> comments = post.getComments();
+                for (int j = 0; j < (int)comments.size(); j++) {
+                    cout << "  - " << comments[j].getAuthor() << ": \"" 
+                         << comments[j].getText() << "\" (" 
+                         << comments[j].getDate().toString() << ")" << endl;
+                }
+            }
+            
+            cout << "----------------------------------------" << endl;
+        }
+    }
+
+    void likePost(int id) {
+        if (!isLoggedIn()) {
+            cout << "Please login first." << endl;
+            return;
+        }
+        
+        Post* post = findPost(id);
+        if (post == NULL) {
+            cout << "Post with ID " << id << " not found." << endl;
+            return;
+        }
+        
+        post->addLike(currentUser);
+        cout << "Post " << id << " liked successfully." << endl;
+        saveData();
+    }
