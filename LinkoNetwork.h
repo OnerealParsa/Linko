@@ -259,3 +259,196 @@ public:
         cout << "Post " << id << " liked successfully." << endl;
         saveData();
     }
+
+    void addComment(int id, const string& text) {
+        if (!isLoggedIn()) {
+            cout << "Please login first." << endl;
+            return;
+        }
+        
+        Post* post = findPost(id);
+        if (post == NULL) {
+            cout << "Post with ID " << id << " not found." << endl;
+            return;
+        }
+        
+        post->addComment(Comment(text, currentUser));
+        cout << "Comment added successfully." << endl;
+        saveData();
+    }
+    
+    void deletePost(int id) {
+        if (!isLoggedIn()) {
+            cout << "Please login first." << endl;
+            return;
+        }
+        
+        for (int i = 0; i < (int)posts.size(); i++) {
+            if (posts[i].getId() == id) {
+                if (posts[i].getAuthor() != currentUser) {
+                    cout << "You can only delete your own posts." << endl;
+                    return;
+                }
+                
+                posts.erase(posts.begin() + i);
+                cout << "Post " << id << " deleted successfully." << endl;
+                saveData();
+                return;
+            }
+        }
+        
+        cout << "Post with ID " << id << " not found." << endl;
+    }
+    
+    void editProfile(const string& newDisplayName, const string& newBio) {
+        if (!isLoggedIn()) {
+            cout << "Please login first." << endl;
+            return;
+        }
+        
+        User* user = findUser(currentUser);
+        if (newDisplayName != "") {
+            user->setDisplayName(newDisplayName);
+        }
+        if (newBio != "") {
+            user->setBio(newBio);
+        }
+        
+        cout << "Profile updated successfully." << endl;
+        saveData();
+    }
+    
+    void showProfile(const string& username = "") {
+        string target = (username == "") ? currentUser : username;
+        
+        if (target == "" && !isLoggedIn()) {
+            cout << "Please login first or specify a username." << endl;
+            return;
+        }
+        
+        const User* user = findUser(target);
+        if (user == NULL) {
+            cout << "User not found." << endl;
+            return;
+        }
+        
+        cout << "\n=============== PROFILE ===============" << endl;
+        cout << "Display Name: " << user->getDisplayName() << " (@" << user->getUsername() << ")" << endl;
+        cout << "Bio: " << user->getBio() << endl;
+        cout << "Posts: " << getUserPostCount(target) << endl;
+        cout << "Following: " << user->getFollowingCount() << " users" << endl;
+        cout << "Followers: " << user->getFollowersCount() << " users" << endl;
+        
+        if (user->getFollowingCount() > 0) {
+            cout << "Following list: ";
+            vector<string> following = user->getFollowing();
+            for (int i = 0; i < (int)following.size(); i++) {
+                cout << following[i];
+                if (i < (int)following.size() - 1) cout << ", ";
+            }
+            cout << endl;
+        }
+        
+        if (user->getFollowersCount() > 0) {
+            cout << "Followers list: ";
+            vector<string> followers = user->getFollowers();
+            for (int i = 0; i < (int)followers.size(); i++) {
+                cout << followers[i];
+                if (i < (int)followers.size() - 1) cout << ", ";
+            }
+            cout << endl;
+        }
+        
+        cout << "========================================" << endl;
+    }
+
+    void saveData() {
+        ofstream fout("linko_data.txt");
+        if (!fout) {
+            cout << "Error: Could not save data." << endl;
+            return;
+        }
+        
+        fout << users.size() << endl;
+        for (int i = 0; i < (int)users.size(); i++) {
+            fout << users[i].serialize() << endl;
+        }
+        
+        fout << posts.size() << endl;
+        for (int i = 0; i < (int)posts.size(); i++) {
+            fout << posts[i].serialize() << endl;
+        }
+        
+        fout << nextPostId << endl;
+        fout.close();
+        cout << "Data saved successfully." << endl;
+    }
+
+void loadData() {
+    ifstream fin("linko_data.txt");
+    if (!fin) {
+        nextPostId = 1;
+        return;
+    }
+    
+    users.clear();
+    posts.clear();
+    
+    try {
+        int userCount = 0;
+        string line;
+        
+        if (!getline(fin, line)) return;
+        userCount = stoi(line);
+        
+        for (int i = 0; i < userCount; i++) {
+            if (!getline(fin, line)) break;
+            if (!line.empty()) {
+                User u = User::deserialize(line);
+                if (u.getUsername() != "") {
+                    users.push_back(u);
+                }
+            }
+        }
+        
+        int postCount = 0;
+        if (!getline(fin, line)) {
+            nextPostId = 1;
+            fin.close();
+            return;
+        }
+        postCount = stoi(line);
+        
+        int maxId = 0;
+        for (int i = 0; i < postCount; i++) {
+            if (!getline(fin, line)) break;
+            if (!line.empty()) {
+                Post p = Post::deserialize(line);
+                if (p.getId() != 0) {
+                    posts.push_back(p);
+                    if (p.getId() > maxId) maxId = p.getId();
+                    
+                   
+                    cout << "Loaded post " << p.getId() << " with " 
+                         << p.getCommentsCount() << " comments" << endl;
+                }
+            }
+        }
+        
+        if (getline(fin, line)) {
+            nextPostId = stoi(line);
+            if (nextPostId <= maxId) nextPostId = maxId + 1;
+        } else {
+            nextPostId = maxId + 1;
+        }
+        
+    } catch (const exception& e) {
+        cout << "Error loading data: " << e.what() << endl;
+        nextPostId = 1;
+    }
+    
+    fin.close();
+    }
+};
+
+#endif
