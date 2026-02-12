@@ -228,3 +228,180 @@ public:
         return p;
     }
 };
+
+class User {
+private:
+    string username;
+    string password;
+    string displayName;
+    string bio;
+    vector<string> following;
+    vector<string> followers;
+
+public:
+    User() {
+        username = "";
+        password = "";
+        displayName = "";
+        bio = "";
+    }
+    
+    User(const string& un, const string& pw, const string& dn, const string& b) {
+        username = un;
+        password = pw;
+        displayName = dn;
+        bio = b;
+    }
+    
+    string getUsername() const { return username; }
+    string getPassword() const { return password; }
+    string getDisplayName() const { return displayName; }
+    string getBio() const { return bio; }
+    
+    void setBio(const string& newBio) { bio = newBio; }
+    void setDisplayName(const string& newName) { displayName = newName; }
+    
+    int getFollowingCount() const { return (int)following.size(); }
+    int getFollowersCount() const { return (int)followers.size(); }
+    vector<string> getFollowing() const { return following; }
+    vector<string> getFollowers() const { return followers; }
+    
+    bool isFollowing(const string& target) const {
+        for (int i = 0; i < (int)following.size(); i++) {
+            if (following[i] == target) return true;
+        }
+        return false;
+    }
+    
+    void addFollowing(const string& target) {
+        for (int i = 0; i < (int)following.size(); i++) {
+            if (following[i] == target) return;
+        }
+        following.push_back(target);
+    }
+    
+    void removeFollowing(const string& target) {
+        for (int i = 0; i < (int)following.size(); i++) {
+            if (following[i] == target) {
+                following.erase(following.begin() + i);
+                return;
+            }
+        }
+    }
+    
+    void addFollower(const string& follower) {
+        for (int i = 0; i < (int)followers.size(); i++) {
+            if (followers[i] == follower) return;
+        }
+        followers.push_back(follower);
+    }
+    
+    void removeFollower(const string& follower) {
+        for (int i = 0; i < (int)followers.size(); i++) {
+            if (followers[i] == follower) {
+                followers.erase(followers.begin() + i);
+                return;
+            }
+        }
+    }
+    
+    bool checkPassword(const string& pw) const { return password == pw; }
+    
+    string serialize() const {
+        stringstream ss;
+        
+        ss << username << "|" << password << "|" << displayName << "|";
+        
+        string safeBio = bio;
+        for (int i = 0; i < (int)safeBio.length(); i++) {
+            if (safeBio[i] == '|') safeBio[i] = 0x7F;
+            if (safeBio[i] == ',') safeBio[i] = 0x7E;
+        }
+        ss << safeBio << "|";
+        
+        ss << following.size() << "|";
+        for (int i = 0; i < (int)following.size(); i++) {
+            ss << following[i];
+            if (i < (int)following.size() - 1) ss << ",";
+        }
+        ss << "|";
+        
+        ss << followers.size() << "|";
+        for (int i = 0; i < (int)followers.size(); i++) {
+            ss << followers[i];
+            if (i < (int)followers.size() - 1) ss << ",";
+        }
+        ss << "|";
+        
+        return ss.str();
+    }
+    
+    static User deserialize(const string& str) {
+        User u;
+        vector<string> parts;
+        string current = "";
+        
+        for (int i = 0; i < (int)str.length(); i++) {
+            if (str[i] == '|') {
+                parts.push_back(current);
+                current = "";
+            } else {
+                current += str[i];
+            }
+        }
+        if (!current.empty()) parts.push_back(current);
+        
+        if (parts.size() < 5) return User();
+        
+        try {
+            int index = 0;
+            
+            u.username = parts[index++];
+            u.password = parts[index++];
+            u.displayName = parts[index++];
+            u.bio = parts[index++];
+            
+            for (int i = 0; i < (int)u.bio.length(); i++) {
+                if (u.bio[i] == 0x7F) u.bio[i] = '|';
+                if (u.bio[i] == 0x7E) u.bio[i] = ',';
+            }
+            
+           
+            if (index < (int)parts.size()) {
+                int followingCount = stoi(parts[index++]);
+                if (index < (int)parts.size()) {
+                    string followingStr = parts[index++];
+                    stringstream followingStream(followingStr);
+                    string username;
+                    for (int i = 0; i < followingCount; i++) {
+                        if (getline(followingStream, username, ',')) {
+                            if (!username.empty()) u.following.push_back(username);
+                        }
+                    }
+                }
+            }
+            
+           
+            if (index < (int)parts.size()) {
+                int followersCount = stoi(parts[index++]);
+                if (index < (int)parts.size()) {
+                    string followersStr = parts[index++];
+                    stringstream followersStream(followersStr);
+                    string username;
+                    for (int i = 0; i < followersCount; i++) {
+                        if (getline(followersStream, username, ',')) {
+                            if (!username.empty()) u.followers.push_back(username);
+                        }
+                    }
+                }
+            }
+            
+        } catch (const exception& e) {
+            return User();
+        }
+        
+        return u;
+    }
+};
+
+#endif
