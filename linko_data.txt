@@ -1,0 +1,9 @@
+3
+al|al1|al|Hello~ I'm new to Linko!|1|par|1|par|
+par|par1|par|Hello~ I'm new to Linko!|1|al|2|al,p1|
+p1|p1|p1|Hello~ I'm new to Linko!|1|par|0||
+3
+2|par|021292130|0|2026 2 11 21 32 36|0||1|asdk;akld|par|2026 2 11 21 32 44|
+3|par|kasjklasjj|0|2026 2 11 21 37 22|0||1|sakljslak|par|2026 2 11 21 37 42|
+4|p1|test shabane|0|2026 2 12 2 57 8|0||1|khodaya|p1|2026 2 12 2 57 28|
+5
