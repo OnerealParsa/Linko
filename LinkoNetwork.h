@@ -189,7 +189,9 @@ public:
             for (int i = 0; i < (int)feedPosts.size() - 1; i++) {
                 for (int j = 0; j < (int)feedPosts.size() - i - 1; j++) {
                     if (feedPosts[j].getDate() < feedPosts[j + 1].getDate()) {
-                        swap(feedPosts[j], feedPosts[j + 1]);
+                        Post temp = feedPosts[j];
+                        feedPosts[j] = feedPosts[j + 1];
+                        feedPosts[j + 1] = temp;
                     }
                 }
             }
@@ -198,7 +200,9 @@ public:
             for (int i = 0; i < (int)feedPosts.size() - 1; i++) {
                 for (int j = 0; j < (int)feedPosts.size() - i - 1; j++) {
                     if (feedPosts[j].getLikes() < feedPosts[j + 1].getLikes()) {
-                        swap(feedPosts[j], feedPosts[j + 1]);
+                        Post temp = feedPosts[j];
+                        feedPosts[j] = feedPosts[j + 1];
+                        feedPosts[j + 1] = temp;
                     }
                 }
             }
@@ -384,70 +388,74 @@ public:
         cout << "Data saved successfully." << endl;
     }
 
-void loadData() {
-    ifstream fin("linko_data.txt");
-    if (!fin) {
-        nextPostId = 1;
-        return;
-    }
-    
-    users.clear();
-    posts.clear();
-    
-    try {
-        int userCount = 0;
-        string line;
-        
-        if (!getline(fin, line)) return;
-        userCount = stoi(line);
-        
-        for (int i = 0; i < userCount; i++) {
-            if (!getline(fin, line)) break;
-            if (!line.empty()) {
-                User u = User::deserialize(line);
-                if (u.getUsername() != "") {
-                    users.push_back(u);
-                }
-            }
-        }
-        
-        int postCount = 0;
-        if (!getline(fin, line)) {
+    void loadData() {
+        ifstream fin("linko_data.txt");
+        if (!fin) {
             nextPostId = 1;
-            fin.close();
             return;
         }
-        postCount = stoi(line);
         
-        int maxId = 0;
-        for (int i = 0; i < postCount; i++) {
-            if (!getline(fin, line)) break;
-            if (!line.empty()) {
-                Post p = Post::deserialize(line);
-                if (p.getId() != 0) {
-                    posts.push_back(p);
-                    if (p.getId() > maxId) maxId = p.getId();
-                    
-                   
-                    cout << "Loaded post " << p.getId() << " with " 
-                         << p.getCommentsCount() << " comments" << endl;
+        users.clear();
+        posts.clear();
+        
+        try {
+            int userCount = 0;
+            string line;
+            
+            if (!getline(fin, line)) return;
+            userCount = stoi(line);
+            
+            for (int i = 0; i < userCount; i++) {
+                if (!getline(fin, line)) break;
+                if (!line.empty()) {
+                    User u = User::deserialize(line);
+                    if (u.getUsername() != "") {
+                        users.push_back(u);
+                    }
                 }
             }
+            
+            int postCount = 0;
+            if (!getline(fin, line)) {
+                nextPostId = 1;
+                fin.close();
+                return;
+            }
+            postCount = stoi(line);
+            
+            int maxId = 0;
+            for (int i = 0; i < postCount; i++) {
+                if (!getline(fin, line)) break;
+                if (!line.empty()) {
+                    Post p = Post::deserialize(line);
+                    if (p.getId() != 0) {
+                        posts.push_back(p);
+                        if (p.getId() > maxId) maxId = p.getId();
+                    }
+                }
+            }
+            
+            if (getline(fin, line)) {
+                nextPostId = stoi(line);
+                if (nextPostId <= maxId) nextPostId = maxId + 1;
+            } else {
+                nextPostId = maxId + 1;
+            }
+            
+        } catch (const exception& e) {
+            cout << "Error loading data: " << e.what() << endl;
+            nextPostId = 1;
         }
         
-        if (getline(fin, line)) {
-            nextPostId = stoi(line);
-            if (nextPostId <= maxId) nextPostId = maxId + 1;
-        } else {
-            nextPostId = maxId + 1;
-        }
-        
-    } catch (const exception& e) {
-        cout << "Error loading data: " << e.what() << endl;
-        nextPostId = 1;
+        fin.close();
     }
     
-    fin.close();
+    const vector<Post>& getAllPosts() const { 
+        return posts; 
+    }
+    
+    const User* getUserByUsername(const string& username) const { 
+        return findUser(username); 
     }
 };
 
